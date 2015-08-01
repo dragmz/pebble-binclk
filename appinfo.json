@@ -1,0 +1,18 @@
+{
+  "uuid": "409a6ae6-bb9a-4f0f-861f-e73312961238",
+  "shortName": "binclk",
+  "longName": "Binary",
+  "companyName": "Marcin Zawiejski",
+  "versionLabel": "1.0",
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt"],
+  "watchapp": {
+    "watchface": true
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
