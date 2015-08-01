@@ -22,7 +22,54 @@ int blocksH;
 int W;
 int H;
 
-void refresh (struct tm *ts, TimeUnits changed)
+void render(struct Layer *layer, GContext *ctx);
+void refresh(struct tm *ts, TimeUnits changed);
+
+static void main_window_unload(Window *window)
+{
+  layer_remove_from_parent(bitmap_layer_get_layer(bl));
+  gbitmap_destroy(bmp);
+  bitmap_layer_destroy(bl);
+}
+
+static void main_window_load(Window *window)
+{
+  layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(layer);
+
+  W = bounds.size.w;
+  H = bounds.size.h;
+
+  blockW = W / 6;
+  blocksH = (H - DATE_HEIGHT - TIME_HEIGHT);
+  blockH = blocksH / 3;
+
+  font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+
+  bl = bitmap_layer_create(layer_get_frame(layer));
+  bmp = gbitmap_create_blank(bounds.size, 1);
+
+  layer_add_child(layer, bitmap_layer_get_layer(bl));
+
+  layer_set_update_proc(bitmap_layer_get_layer(bl), render);
+}
+
+static void main_window_appear(Window *window)
+{
+  time_t temp = time(NULL);
+  struct tm *ts = localtime(&temp);
+
+  refresh(ts, 0);
+
+  tick_timer_service_subscribe(SECOND_UNIT, refresh);
+}
+
+static void main_window_disappear(Window *window)
+{
+  tick_timer_service_unsubscribe();
+}
+
+void refresh(struct tm *ts, TimeUnits changed)
 {
   strftime(datebuf, 11, "%Y/%m/%d", ts);
   strftime(timebuf, 9, "%H:%M:%S", ts);
@@ -68,40 +115,19 @@ void render(struct Layer *layer, GContext *ctx)
 void init()
 {
   window = window_create();
+
+  window_set_window_handlers(window, (WindowHandlers) {
+    .load = main_window_load,
+    .unload = main_window_unload,
+    .appear = main_window_appear,
+    .disappear = main_window_disappear
+  });
+
   window_stack_push(window, true);
-
-  layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(layer);
-
-  W = bounds.size.w;
-  H = bounds.size.h;
-
-  blockW = W / 6;
-  blocksH = (H - DATE_HEIGHT - TIME_HEIGHT);
-  blockH = blocksH / 3;
-
-  font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-
-  bl = bitmap_layer_create(layer_get_frame(layer));
-  bmp = gbitmap_create_blank(bounds.size, 1);
-
-  layer_add_child(layer, bitmap_layer_get_layer(bl));
-
-  layer_set_update_proc(bitmap_layer_get_layer(bl), render);
-
-  time_t temp = time(NULL);
-  struct tm *ts = localtime(&temp);
-
-  refresh(ts, 0);
-
-  tick_timer_service_subscribe(SECOND_UNIT, refresh);
 }
 
 void deinit()
 {
-  layer_remove_from_parent(bitmap_layer_get_layer(bl));
-  gbitmap_destroy(bmp);
-  bitmap_layer_destroy(bl);
   window_destroy(window);
 }
 
